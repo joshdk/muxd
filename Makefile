@@ -5,7 +5,7 @@ INSTALL            = /usr/bin/mmux
 SUCCESS_MSG        = '  [\e[32m DONE \e[0m]'
 
 CC                 = gcc
-CFLAGS             = -std=c99 -lmagic -Wall -Wextra -g3
+CFLAGS             = -std=c99 -lconfig -lmagic -Wall -Wextra -g3
 
 
 all: build
