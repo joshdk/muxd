@@ -1,11 +1,11 @@
-OUTFILES           = build/mmux.o
+OUTFILES           = build/mmux.o build/config.o
 TARGET             = build/mmux
 INSTALL            = /usr/bin/mmux
 
 SUCCESS_MSG        = '  [\e[32m DONE \e[0m]'
 
 CC                 = gcc
-CFLAGS             = -std=c99 -Wall -Wextra -g3
+CFLAGS             = -std=c99 -lmagic -Wall -Wextra -g3
 
 
 all: build
@@ -18,6 +18,10 @@ $(TARGET): $(OUTFILES)
 	@echo -e $(SUCCESS_MSG)
 
 build/mmux.o: src/mmux.c
+	@mkdir -p build/
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+build/config.o: src/config.c src/config.h
 	@mkdir -p build/
 	@$(CC) $(CFLAGS) -c $< -o $@
 
