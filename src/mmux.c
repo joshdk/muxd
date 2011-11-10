@@ -11,30 +11,13 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-
+#include "config.h"
 
 gid_t gid=500;
 uid_t uid=500;
 
 
-
-//struct addrinfo {
-	//int              ai_flags;
-	//int              ai_family;
-	//int              ai_socktype;
-	//int              ai_protocol;
-	//size_t           ai_addrlen;
-	//struct sockaddr *ai_addr;
-	//char            *ai_canonname;
-	//struct addrinfo *ai_next;
-//};
-
 char *strdup(const char *s);
-
-//int getaddrinfo(const char *node, const char *service,
-		//const struct addrinfo *hints,
-		//struct addrinfo **res);
-
 
 
 // get sockaddr, IPv4 or IPv6:
@@ -46,36 +29,6 @@ char *strdup(const char *s);
 
     //return &(((struct sockaddr_in6*)sa)->sin6_addr);
 //}
-
-
-
-//int hexdump(char *data,int len,int size){
-	//char *hex="0123456789ABCDEF";
-	//for(int n=0;n<len;++n){
-		//printf("%c%c ",hex[(unsigned char)data[n]>>4],hex[(unsigned char)data[n]&15]);
-	//}
-	//for(int n=len;n<size;++n){
-		//printf("   ");
-	//}
-	//printf(" |");
-	//for(int n=0;n<len;++n){
-		//printf("%c",isprint(data[n])?data[n]:'.');
-	//}
-	//printf("|");
-	//for(int n=len;n<size;++n){
-		//printf(" ");
-	//}
-	//printf("\n");
-
-	//return 0;
-//}
-
-
-
-
-
-
-
 
 
 
@@ -105,9 +58,7 @@ int main(int argc,char **argv){
 
 
 
-	struct addrinfo hints, *servinfo, *p;
-	//int rv,sockfd;
-	//char s[INET6_ADDRSTRLEN];
+	struct addrinfo hints, *servinfo;
 
 
 	memset(&hints, 0, sizeof hints);
@@ -117,31 +68,15 @@ int main(int argc,char **argv){
 
 	//local host lookup
 	if((getaddrinfo(laddr,lport,&hints,&servinfo))!=0){
-		//fprintf(stderr, "getaddrinfo: %d\n", gai_strerror(rv));
 		perror("[-] getaddrinfo");
 		return 1;
 	}
 	puts("[+] getaddrinfo");
 
-	int lsocket=0;
+	int lsocket=-1;
 	struct sockaddr_in *sa=NULL;
-	for(p=servinfo;p!=NULL;p=p->ai_next){
-		printf("ai_flags: [%d]\n",p->ai_flags);
-		printf("ai_family: [%d]\n",p->ai_family);
-		printf("ai_socktype: [%d]\n",p->ai_socktype);
-		printf("ai_protocol: [%d]\n",p->ai_protocol);
-		printf("ai_addrlen: [%u]\n",p->ai_addrlen);
-		printf("ai_canonname: [%s]\n",p->ai_canonname);
-		////printf("ai_flags: [%d]\n",p->ai_flags);
-		//sa=p->ai_addr;
-		////if(sa->sin_family==AF_INET){
-		////struct in_addr *temp=&(sa->sin_addr);
-		//printf("port: [%d]\n",sa->sin_port);
-		//char s[INET6_ADDRSTRLEN];
-		////((struct in_addr)temp)->s_addr=INADDR_ANY;
-		////temp->s_addr=INADDR_ANY;
-		//inet_ntop(p->ai_family,&sa->sin_addr,s,sizeof(s));
-		//printf("client: connecting to %s\n", s);
+	int bind_success=0;
+	for(struct addrinfo *p=servinfo;p!=NULL;p=p->ai_next){
 
 		//create local socket
 		if((lsocket=socket(p->ai_family,p->ai_socktype,p->ai_protocol))<0){
@@ -151,6 +86,7 @@ int main(int argc,char **argv){
 			puts("[+] socket");
 		}
 
+		//set socket option
 		int flags=1;
 		if(setsockopt(lsocket,SOL_SOCKET,SO_REUSEADDR,&flags,sizeof(flags))!=0){
 			perror("[-] setsockopt");
@@ -165,14 +101,14 @@ int main(int argc,char **argv){
 			continue;
 		}else{
 			puts("[+] bind");
+			bind_success=1;
 			break;
 		}
 
-		printf("----------------\n");
 	}
 
 
-	if(p==NULL){
+	if(bind_success==0){
 		fprintf(stderr, "selectserver: failed to bind\n");
 		return 1;
 	}
@@ -234,31 +170,12 @@ int main(int argc,char **argv){
 
 	//remote host lookup
 	if((getaddrinfo(raddr,rport,&hints,&servinfo))!=0){
-		//fprintf(stderr, "getaddrinfo: %d\n", gai_strerror(rv));
 		puts("[-] getaddrinfo");
 		return 1;
 	}
 	puts("[+] getaddrinfo");
 
-	//int rsocket=0;
-	//struct sockaddr_in *sa=NULL;
-	for(p=servinfo;p!=NULL;p=p->ai_next){
-		//printf("ai_flags: [%d]\n",p->ai_flags);
-		//printf("ai_family: [%d]\n",p->ai_family);
-		//printf("ai_socktype: [%d]\n",p->ai_socktype);
-		//printf("ai_protocol: [%d]\n",p->ai_protocol);
-		//printf("ai_addrlen: [%u]\n",p->ai_addrlen);
-		//printf("ai_canonname: [%s]\n",p->ai_canonname);
-		////printf("ai_flags: [%d]\n",p->ai_flags);
-		//sa=p->ai_addr;
-		////if(sa->sin_family==AF_INET){
-		////struct in_addr *temp=&(sa->sin_addr);
-		//printf("port: [%d]\n",sa->sin_port);
-		//char s[INET6_ADDRSTRLEN];
-		////((struct in_addr)temp)->s_addr=INADDR_ANY;
-		////temp->s_addr=INADDR_ANY;
-		//inet_ntop(p->ai_family,&sa->sin_addr,s,sizeof(s));
-		//printf("client: connecting to %s\n", s);
+	for(struct addrinfo *p=servinfo;p!=NULL;p=p->ai_next){
 
 		//create remote socket
 		if((fdrsocket=socket(p->ai_family,p->ai_socktype,p->ai_protocol))<0){
