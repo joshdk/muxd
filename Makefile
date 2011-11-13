@@ -1,4 +1,4 @@
-OUTFILES           = build/mmux.o build/config.o
+OUTFILES           = build/mmux.o build/config.o build/magic.o
 TARGET             = build/mmux
 INSTALL            = /usr/bin/mmux
 
@@ -22,6 +22,10 @@ build/mmux.o: src/mmux.c
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 build/config.o: src/config.c src/config.h
+	@mkdir -p build/
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+build/magic.o: src/magic.c src/magic.h
 	@mkdir -p build/
 	@$(CC) $(CFLAGS) -c $< -o $@
 
