@@ -12,6 +12,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include "config.h"
+#include "magic.h"
 
 gid_t gid=500;
 uid_t uid=500;
@@ -37,18 +38,46 @@ char *strdup(const char *s);
 
 int main(int argc,char **argv){
 
-	if(argc<5){
+	if(argc<3){
 		//fail
 		return 1;
 	}
 
-	char *laddr=strdup(argv[1]);
-	char *lport=strdup(argv[2]);
-	char *raddr=strdup(argv[3]);
-	char *rport=strdup(argv[4]);
+	config_t conf;
+	config_open(argv[1],&conf);
+
+	char *laddr=NULL;
+	config_get_host(&conf,&laddr);
+	
+	char *lport=NULL;
+	config_get_port(&conf,&lport);
+
 
 	printf("local:  [%s:%s]\n",laddr,lport);
-	printf("remote: [%s:%s]\n",raddr,rport);
+
+
+	service **services=NULL;
+	config_get_services(&conf,&services);
+
+
+	magic_t cookie=NULL;
+	if((cookie=magic_open(MAGIC_NONE))==NULL){
+		printf("[-] magic_open\n");
+		return 1;
+	}
+	printf("[+] magic_open\n");
+
+
+	if(magic_load(cookie,argv[2])==-1){
+		printf("[-] magic_load\n");
+		return 1;
+	}
+	printf("[+] magic_load\n");
+
+
+	//char *raddr=NULL;
+	//char *rport=NULL;
+	//printf("remote: [%s:%s]\n",raddr,rport);
 
 
 
@@ -164,6 +193,25 @@ int main(int argc,char **argv){
 		perror("[-] recv");
 		return 1;
 	}
+	buffer[lbuffer]='\0';
+	printf("buffer: [%s]\n",buffer);
+
+
+	service *service=NULL;
+	if((service=magic_get_service(cookie,services,buffer,lbuffer))==NULL){
+		printf("[-] magic_get_service: no service found\n");
+		return 1;
+	}
+	printf("[+] magic_get_service\n");
+
+	char *raddr=NULL;
+	char *rport=NULL;
+	raddr=service->host;
+	rport=service->port;
+	printf("remote: [%s:%s]\n",raddr,rport);
+
+
+
 
 
 	
