@@ -1,6 +1,6 @@
-OUTFILES           = build/mmux.o build/config.o build/magic.o
-TARGET             = build/mmux
-INSTALL            = /usr/bin/mmux
+OUTFILES           = build/main.o build/config.o build/magic.o
+TARGET             = build/muxd
+INSTALL            = /usr/bin/muxd
 
 SUCCESS_MSG        = '  [\e[32m DONE \e[0m]'
 
@@ -17,7 +17,7 @@ $(TARGET): $(OUTFILES)
 	@$(CC) $(CFLAGS) $^ -o $@
 	@echo -e $(SUCCESS_MSG)
 
-build/mmux.o: src/mmux.c
+build/main.o: src/main.c
 	@mkdir -p build/
 	@$(CC) $(CFLAGS) -c $< -o $@
 
