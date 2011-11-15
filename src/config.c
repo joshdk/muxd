@@ -148,7 +148,7 @@ int config_get_services(config_t *config,service ***final_services){
 		}
 		names[names_len]=NULL;
 
-		services[services_len]=malloc(sizeof(service *));
+		services[services_len]=malloc(sizeof(service));
 		services[services_len]->host=host;
 		services[services_len]->port=port;
 		services[services_len]->names=names;
