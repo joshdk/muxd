@@ -9,7 +9,7 @@ service *magic_get_service(magic_t cookie,service **services,char *buffer,size_t
 	if((description=magic_buffer(cookie,buffer,length))==NULL){
 		return NULL;
 	}
-	printf("magic name: [%s]\n",description);
+	//printf("magic name: [%s]\n",description);
 
 	for(int si=0;services[si]!=NULL;++si){
 		for(int ni=0;services[si]->names[ni]!=NULL;++ni){
