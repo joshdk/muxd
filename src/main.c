@@ -15,34 +15,8 @@
 #include "config.h"
 #include "magic.h"
 
-gid_t gid=500;
-uid_t uid=500;
-
 
 char *strdup(const char *s);
-
-
-// get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
-
-in_port_t get_in_port(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET) {
-        return (((struct sockaddr_in*)sa)->sin_port);
-    }
-
-    return (((struct sockaddr_in6*)sa)->sin6_port);
-}
-
-
 
 
 int main(int argc,char **argv){
@@ -67,27 +41,29 @@ int main(int argc,char **argv){
 		return 1;
 	}
 
+	syslog(LOG_INFO,"reading config file");
+
 	char *laddr=NULL;
 	if(config_get_host(&conf,&laddr)){
-		syslog(LOG_ERR,"failed to read host from %s",argv[1]);
+		syslog(LOG_ERR,"failed to read host");
 		syslog(LOG_CRIT,"stopping muxd");
 		return 1;
 	}
 	
 	char *lport=NULL;
 	if(config_get_port(&conf,&lport)){
-		syslog(LOG_ERR,"failed to read port from %s",argv[1]);
+		syslog(LOG_ERR,"failed to read port");
 		syslog(LOG_CRIT,"stopping muxd");
 		return 1;
 	}
 
 
-	printf("local:  [%s:%s]\n",laddr,lport);
+	//printf("local:  [%s:%s]\n",laddr,lport);
 
 
 	service **services=NULL;
 	if(config_get_services(&conf,&services)){
-		syslog(LOG_ERR,"failed to read services from %s",argv[1]);
+		syslog(LOG_ERR,"failed to read services");
 		syslog(LOG_CRIT,"stopping muxd");
 		return 1;
 	}
@@ -104,9 +80,10 @@ int main(int argc,char **argv){
 		return 1;
 	}
 
+	syslog(LOG_INFO,"reading magic file");
 
 	if(magic_load(cookie,argv[2])==-1){
-		syslog(LOG_ERR,"failed to open magic file %s",argv[2]);
+		syslog(LOG_ERR,"failed to read magic");
 		syslog(LOG_CRIT,"stopping muxd");
 		return 1;
 	}
@@ -129,7 +106,7 @@ int main(int argc,char **argv){
 
 	//local host lookup
 	
-	syslog(LOG_INFO,"attempting to lookup local address [%s]:%s",laddr,lport);
+	syslog(LOG_INFO,"looking up local address [%s]:%s",laddr,lport);
 
 	if((getaddrinfo(laddr,lport,&hints,&servinfo))!=0){
 		syslog(LOG_ERR,"failed to lookup local address [%s]:%s",laddr,lport);
@@ -143,19 +120,19 @@ int main(int argc,char **argv){
 
 		//create local socket
 		if((lsocket=socket(p->ai_family,p->ai_socktype,p->ai_protocol))<0){
-			perror("[-] socket");
+			//perror("[-] socket");
 			continue;
 		}else{
-			puts("[+] socket");
+			//puts("[+] socket");
 		}
 
 		//set socket option
 		int flags=1;
 		if(setsockopt(lsocket,SOL_SOCKET,SO_REUSEADDR,&flags,sizeof(flags))!=0){
-			perror("[-] setsockopt");
+			//perror("[-] setsockopt");
 			return 1;
 		}else{
-			puts("[+] setsockopt");
+			//puts("[+] setsockopt");
 		}
 
 		//bind to local address
@@ -163,7 +140,7 @@ int main(int argc,char **argv){
 			//perror("[-] bind");
 			continue;
 		}else{
-			syslog(LOG_INFO,"successfully bound to local address [%s]:%s",laddr,lport);
+			syslog(LOG_INFO,"bound to local address [%s]:%s",laddr,lport);
 			bind_success=1;
 			break;
 		}
@@ -182,7 +159,10 @@ int main(int argc,char **argv){
 	free(lport);
 
 	//drop privs
-	syslog(LOG_INFO,"attempting to drop privliages to group:%d",gid);
+	gid_t gid=500;
+	uid_t uid=500;
+	syslog(LOG_INFO,"droping privliages to %d:%d",uid,gid);
+
 	if(setgid(gid)!=0){
 		syslog(LOG_ERR,"failed to drop privliages to group:%d",gid);
 		syslog(LOG_CRIT,"stopping muxd");
@@ -191,7 +171,7 @@ int main(int argc,char **argv){
 	//puts("[+] setgid");
 
 	//drop privs
-	syslog(LOG_INFO,"attempting to drop privliages to user:%d",uid);
+	//syslog(LOG_INFO,"attempting to drop privliages to user:%d",uid);
 	if(setuid(uid)!=0){
 		syslog(LOG_ERR,"failed to drop privliages to user:%d",uid);
 		syslog(LOG_CRIT,"stopping muxd");
@@ -202,7 +182,7 @@ int main(int argc,char **argv){
 
 
 	//listen on port
-	syslog(LOG_INFO,"attempting to listen on socket");
+	syslog(LOG_INFO,"listening on socket");
 	if(listen(lsocket,3)!=0){
 		syslog(LOG_ERR,"failed to listen on socket");
 		syslog(LOG_CRIT,"stopping muxd");
@@ -219,27 +199,27 @@ int main(int argc,char **argv){
 
 	//accept client connections
 	while((fdlsocket=accept(lsocket,(struct sockaddr *)&sas,&addrlen))>=0){
-		puts("[+] accept");
+		//puts("[+] accept");
 
 		const struct sockaddr *client=(struct sockaddr *)&sas;
 		if(getnameinfo(client,addrlen,bhost,INET6_ADDRSTRLEN+1,bport,16+1,NI_NUMERICHOST|NI_NUMERICSERV)==0){
-			printf("name success\n");
-			printf("host: [%s]\n",bhost);
-			printf("port: [%s]\n",bport);
+			//printf("name success\n");
+			//printf("host: [%s]\n",bhost);
+			//printf("port: [%s]\n",bport);
 			syslog(LOG_INFO,"accepted client [%s]:%s",bhost,bport);
 		}else{
-			printf("name failure\n");
-			syslog(LOG_INFO,"accepted client");
+			//printf("name failure\n");
+			syslog(LOG_INFO,"accepted client [???]:???");
 		}
 
 		//break;
 		pid_t child=0;
 		if((child=fork())==0){
-			puts("[+] child fork");
+			//puts("[+] child fork");
 			break;
 		}else{
-			printf("[+] parent fork (%d)\n",child);
-			syslog(LOG_INFO,"forked worker process %d",child);
+			//printf("[+] parent fork (%d)\n",child);
+			syslog(LOG_INFO,"created worker %d",child);
 		}
 	}
 
@@ -286,7 +266,7 @@ int main(int argc,char **argv){
 	raddr=strdup(service->host);
 	rport=strdup(service->port);
 	free_services(services);
-	printf("remote: [%s:%s]\n",raddr,rport);
+	//printf("remote: [%s:%s]\n",raddr,rport);
 
 	//free(buffer);
 	//shutdown(fdlsocket,SHUT_RDWR);
@@ -294,7 +274,7 @@ int main(int argc,char **argv){
 	//return 0;
 
 
-	syslog(LOG_INFO,"attempting to lookup remote address [%s]:%s",raddr,rport);
+	syslog(LOG_INFO,"looking up remote address [%s]:%s",raddr,rport);
 
 	//remote host lookup
 	if((getaddrinfo(raddr,rport,&hints,&servinfo))!=0){
@@ -325,7 +305,7 @@ int main(int argc,char **argv){
 			continue;
 		}else{
 			//puts("[+] connect");
-			syslog(LOG_INFO,"successfully connected to remote address [%s]:%s",raddr,rport);
+			syslog(LOG_INFO,"connected to remote address [%s]:%s",raddr,rport);
 			connect_success=1;
 			break;
 		}
@@ -348,10 +328,12 @@ int main(int argc,char **argv){
 	free(rport);
 	
 	int bs=-1;
-	if((bs=send(fdrsocket,buffer,lbuffer,0))>0){
-		printf("[+] send (%d bytes)\n",bs);
-	}else{
-		perror("[-] send");
+	if((bs=send(fdrsocket,buffer,lbuffer,0))<=0){
+		syslog(LOG_ERR,"failed to send");
+		syslog(LOG_CRIT,"stopping muxd worker");
+		shutdown(fdlsocket,SHUT_RDWR);
+		shutdown(fdrsocket,SHUT_RDWR);
+		free(buffer);
 		return 1;
 	}
 	free(buffer);
@@ -367,24 +349,28 @@ int main(int argc,char **argv){
 
 	pid_t worker=fork();
 	if(worker>0){
-		syslog(LOG_DEBUG,"(parent) local shuttle started");
+		syslog(LOG_DEBUG,"local shuttle started");
 		//shutdown(fdlsocket,SHUT_WR);//we won't write to local
 		//shutdown(fdrsocket,SHUT_RD);//we won't read from remote
 		//puts("[+] fork child");
 		//puts("[!] server start");
-		int size=16;
-		ssize_t count=0;
+		int size=4096;
 		char *shuttle=malloc(size*sizeof(char));
 		while(1){
-			count=recv(fdlsocket,shuttle,size,0);
-			printf("local: recv %d bytes\n",count);
-			if(count<1){
-				syslog(LOG_ERR,"local: failed to recv");
-				printf("local: failed to recv\n");
+			ssize_t brecv=recv(fdlsocket,shuttle,size,0);
+			if(brecv<0){
+				//error
+				syslog(LOG_ERR,"local failed to recv");
 				break;
-			}
-			if(send(fdrsocket,shuttle,count,0)==-1){
-				syslog(LOG_ERR,"local: failed to send");
+			}else if(brecv==0){
+				//ordered shutdown
+				syslog(LOG_INFO,"local orderly shutdown");
+				break;
+			}//success
+
+			ssize_t bsent=send(fdrsocket,shuttle,brecv,0);
+			if(bsent<0){
+				syslog(LOG_ERR,"local failed to send");
 				break;
 			}
 		}
@@ -401,29 +387,33 @@ int main(int argc,char **argv){
 		//}else{
 			//perror("[+] shutdown");
 		//}
-		printf("waiting on child: %d\n",worker);
+		//printf("waiting on child: %d\n",worker);
 		waitpid(worker,NULL,0);
-		printf("done waiting on child: %d\n",worker);
+		//printf("done waiting on child: %d\n",worker);
 
 	}else{
-		syslog(LOG_DEBUG,"(child) remote shuttle started");
+		syslog(LOG_DEBUG,"remote shuttle started");
 		//shutdown(fdlsocket,SHUT_RD);//we won't read from local
 		//shutdown(fdrsocket,SHUT_WR);//we won't write to remote
 		//puts("[+] fork parent");
 		//puts("[!] client start");
-		int size=16;
-		ssize_t count=0;
+		int size=4096;
 		char *shuttle=malloc(size*sizeof(char));
 		while(1){
-			count=recv(fdrsocket,shuttle,size,0);
-			printf("remote: recv %d bytes\n",count);
-			if(count<1){
-				syslog(LOG_ERR,"remote: failed to recv");
-				printf("remote: failed to recv\n");
+			ssize_t brecv=recv(fdrsocket,shuttle,size,0);
+			if(brecv<0){
+				//error
+				syslog(LOG_ERR,"local failed to recv");
 				break;
-			}
-			if(send(fdlsocket,shuttle,count,0)==-1){
-				syslog(LOG_ERR,"remote: failed to send");
+			}else if(brecv==0){
+				//ordered shutdown
+				syslog(LOG_INFO,"local orderly shutdown");
+				break;
+			}//success
+
+			ssize_t bsent=send(fdlsocket,shuttle,brecv,0);
+			if(bsent<0){
+				syslog(LOG_ERR,"local failed to send");
 				break;
 			}
 		}
@@ -440,7 +430,7 @@ int main(int argc,char **argv){
 		//}else{
 			//perror("[+] shutdown");
 		//}
-		printf("child exiting\n");
+		//printf("child exiting\n");
 		exit(0);
 	}
 
