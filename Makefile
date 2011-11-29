@@ -6,6 +6,9 @@ BUILD_FILES          = $(BUILD_DIR)/main.o \
                        $(BUILD_DIR)/magic.o \
                        $(BUILD_DIR)/config.o
 
+INIT_DIR           = ./init
+INIT_FILES         = $(INIT_DIR)/muxd
+
 CONFIG_DIR           = ./conf
 CONFIG_FILES         = $(CONFIG_DIR)/muxd.conf \
                        $(CONFIG_DIR)/muxd.magic
@@ -17,6 +20,9 @@ INSTALL_PROG         = $(INSTALL_DIR)/$(NAME)
 INSTALL_CONFIG_DIR   = /etc/muxd
 INSTALL_CONFIG_FILES = $(INSTALL_CONFIG_DIR)/muxd.conf \
                        $(INSTALL_CONFIG_DIR)/muxd.magic
+
+INSTALL_INIT_DIR     = /etc/init.d
+INSTALL_INIT_FILES   = $(INSTALL_INIT_DIR)/muxd
 
 CC                 = gcc
 CFLAGS             = -std=c99 -lconfig -lmagic -Wall -Wextra -g3
@@ -57,11 +63,13 @@ install: build $(CONFIG_FILES)
 	@install -m 755 $(BUILD_PROG) $(INSTALL_PROG)
 	@mkdir -p $(INSTALL_CONFIG_DIR)
 	@install -m 644 $(CONFIG_FILES) $(INSTALL_CONFIG_DIR)
+	@install -m 755 $(INIT_FILES) $(INSTALL_INIT_DIR)
 	@echo -e $(SUCCESS_MSG)
 
 uninstall:
 	@echo 'Uninstalling muxd:'
 	@rm -f $(INSTALL_PROG)
+	@rm -f $(INSTALL_INIT_FILES)
 	@rm -rf $(INSTALL_CONFIG_DIR)
 	@echo -e $(SUCCESS_MSG)
 
