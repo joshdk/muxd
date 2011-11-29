@@ -22,12 +22,18 @@ int daemon(int nochdir, int noclose);
 
 int main(int argc,char **argv){
 
-	daemon(0,0);
-
 	openlog("muxd",LOG_NDELAY|LOG_PID,LOG_DAEMON);
 	syslog(LOG_NOTICE,"#################");
 	syslog(LOG_NOTICE,"# starting muxd #");
 	syslog(LOG_NOTICE,"#################");
+
+	syslog(LOG_INFO,"daemonizing");
+
+	if(daemon(0,0)!=0){
+		syslog(LOG_ERR,"failed to daemonize");
+		syslog(LOG_CRIT,"stopping muxd");
+		return 1;
+	}
 
 	if(argc<3){
 		syslog(LOG_ERR,"insufficient parameters");
