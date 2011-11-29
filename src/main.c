@@ -17,9 +17,12 @@
 
 
 char *strdup(const char *s);
+int daemon(int nochdir, int noclose);
 
 
 int main(int argc,char **argv){
+
+	daemon(0,0);
 
 	openlog("muxd",LOG_NDELAY|LOG_PID,LOG_DAEMON);
 	syslog(LOG_NOTICE,"#################");
@@ -343,17 +346,17 @@ int main(int argc,char **argv){
 			ssize_t brecv=recv(fdrsocket,shuttle,size,0);
 			if(brecv<0){
 				//error
-				syslog(LOG_ERR,"local failed to recv");
+				syslog(LOG_ERR,"remote failed to recv");
 				break;
 			}else if(brecv==0){
 				//ordered shutdown
-				syslog(LOG_INFO,"local orderly shutdown");
+				syslog(LOG_INFO,"remote orderly shutdown");
 				break;
 			}//success
 
 			ssize_t bsent=send(fdlsocket,shuttle,brecv,0);
 			if(bsent<0){
-				syslog(LOG_ERR,"local failed to send");
+				syslog(LOG_ERR,"remote failed to send");
 				break;
 			}
 		}
