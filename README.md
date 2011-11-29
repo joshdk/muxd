@@ -5,9 +5,14 @@ Building:
 ---------
 	$ make
 
-Running:
---------
-	$ ./build/muxd conf/muxd.conf conf/muxd.magic
+Installing:
+-----------
+	# make install
+
+Starting & Stopping:
+--------------------
+	# service muxd start
+	# service muxd stop
 
 Logging:
 --------
